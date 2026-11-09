@@ -144,6 +144,24 @@ foreach ($game->getShips() as $ship) {
         </section>
 
     </main>
+
+    <script>
+        // Na een klik herlaadt de pagina en spring je normaal terug naar boven.
+        // Daarom onthouden we vlak voor het versturen hoe ver je gescrold was, en zetten dat na het laden terug.
+        document.querySelectorAll('form').forEach(function (form) {
+            form.addEventListener('submit', function () {
+                try { sessionStorage.setItem('scrollY', window.scrollY); } catch (e) {}
+            });
+        });
+
+        try {
+            const scrollY = sessionStorage.getItem('scrollY');
+            if (scrollY !== null) {
+                window.scrollTo(0, parseInt(scrollY));
+                sessionStorage.removeItem('scrollY');
+            }
+        } catch (e) {}
+    </script>
 </body>
 
 </html>
