@@ -18,7 +18,7 @@ class Game
     public function __construct()
     {
         $this->ships['ship1'] = new Spaceship();            // standaard waarden (100, 100, 100)
-        $this->ships['ship2'] = new Spaceship(50, 50, 50);  // eigen waarden
+        $this->ships['ship2'] = new Spaceship();  // eigen waarden
         $this->addLog('Het gevecht begint! Ship 1 is als eerste aan de beurt.', 'end');
     }
 
