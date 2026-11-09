@@ -106,7 +106,7 @@ class Spaceship
     // Studenten kunnen hier zelf op proberen te komen.
     public function move()
     {
-        $fuelUsage = 2;
+        $fuelUsage = 15;
         if ($this->fuel - $fuelUsage > 0) {
             $this->fuel -= $fuelUsage;
         } else {

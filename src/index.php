@@ -50,6 +50,18 @@ include_once 'Spaceship.php';
             echo "Ship2 is dead!<br>";
         }
 
+        //toon de fuel van ship1
+        echo "Ship1 fuel: " . $ship1->fuel . "<br>";
+        //laat ship1 1x bewegen en toon de fuel van ship1
+        $ship1->move();
+        echo "ship1 moves once" . "<br>";
+        echo "Ship1 fuel: " . $ship1->fuel . "<br>";
+        if ($fuel = $ship1->fuel) {
+            echo "Ship1 has fuel!<br>";
+        } else {
+            echo "Ship1 has no fuel!<br>";
+        }
+
 
         echo "The end of the code has been reached.<br>";
         ?>
