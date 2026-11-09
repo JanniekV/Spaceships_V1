@@ -190,7 +190,6 @@ body {
 .bar__fill {
     height: 100%;
     border-radius: 999px;
-    animation: grow 1.2s ease-out;
 }
 
 .bar__fill--hp   { background: linear-gradient(90deg, #1fbf75, var(--green)); box-shadow: 0 0 8px var(--green); }
@@ -202,6 +201,15 @@ body {
 }
 
 /* ===== Logboek / terminal ===== */
+.log__header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 1rem;
+}
+
+.log__header .panel__title { margin-bottom: 0; }
+
 .log__screen {
     background: #02030a;
     border: 1px solid rgba(77, 255, 166, 0.25);
@@ -209,13 +217,12 @@ body {
     padding: 1.25rem;
     font-size: 1rem;
     line-height: 1.8;
-    min-height: 100%;
+    height: 520px;
+    overflow-y: auto;
 }
 
 .log__line {
     color: var(--green);
-    opacity: 0;
-    animation: typeIn 0.4s ease forwards;
 }
 
 .log__line::before {
@@ -223,19 +230,13 @@ body {
     color: var(--muted);
 }
 
-/* Regels verschijnen één voor één */
-.log__line:nth-child(1)  { animation-delay: 0.2s; }
-.log__line:nth-child(2)  { animation-delay: 0.4s; }
-.log__line:nth-child(3)  { animation-delay: 0.6s; }
-.log__line:nth-child(4)  { animation-delay: 0.8s; }
-.log__line:nth-child(5)  { animation-delay: 1.0s; }
-.log__line:nth-child(6)  { animation-delay: 1.2s; }
-.log__line:nth-child(7)  { animation-delay: 1.4s; }
-.log__line:nth-child(8)  { animation-delay: 1.6s; }
-.log__line:nth-child(9)  { animation-delay: 1.8s; }
-.log__line:nth-child(10) { animation-delay: 2.0s; }
-.log__line:nth-child(11) { animation-delay: 2.2s; }
-.log__line:nth-child(n+12) { animation-delay: 2.4s; }
+/* Alleen de nieuwste regel (bovenaan, direct na de cursor) schuift in beeld */
+.cursor + .log__line {
+    animation: typeIn 0.4s ease;
+}
+
+/* Oudere regels iets vager */
+.log__line:nth-of-type(n+4) { opacity: 0.55; }
 
 @keyframes typeIn {
     from { opacity: 0; transform: translateX(-8px); }
@@ -260,4 +261,42 @@ body {
 
 @keyframes blink {
     50% { opacity: 0; }
+}
+
+/* ===== Knoppen ===== */
+.actions {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 0.75rem;
+    margin-top: 1.25rem;
+}
+
+.btn {
+    font-family: "Orbitron", sans-serif;
+    font-size: 0.85rem;
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+    color: var(--text);
+    background: rgba(255, 255, 255, 0.05);
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    padding: 0.75rem 1rem;
+    cursor: pointer;
+    transition: background 0.2s ease, box-shadow 0.2s ease, transform 0.1s ease;
+}
+
+.btn:active:not(:disabled) { transform: scale(0.96); }
+
+.btn--shoot { border-color: var(--yellow); color: var(--yellow); }
+.btn--shoot:hover:not(:disabled) { background: rgba(255, 210, 63, 0.15); box-shadow: 0 0 16px rgba(255, 210, 63, 0.4); }
+
+.btn--move { border-color: var(--purple); color: var(--purple); }
+.btn--move:hover:not(:disabled) { background: rgba(166, 107, 255, 0.15); box-shadow: 0 0 16px rgba(166, 107, 255, 0.4); }
+
+.btn--reset { font-size: 0.7rem; padding: 0.4rem 0.8rem; color: var(--muted); }
+.btn--reset:hover { color: var(--text); border-color: var(--text); }
+
+.btn:disabled {
+    opacity: 0.3;
+    cursor: not-allowed;
 }

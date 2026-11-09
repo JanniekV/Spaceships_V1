@@ -63,7 +63,7 @@ class Spaceship
     public function shoot(): int
     {
         // Aparte variabelen gemaakt om self explaining code uit te leggen, geen magic numbers
-        $shot = 10;
+        $shot = 5;
         $damage = 2;
         // Studenten laten bedenken hoe dit er een beetje uit kan komen te zien.
         // Standaard schade berekenen op 10 bijvoorbeeld.

@@ -1,11 +1,58 @@
 <?php
-// include_once zorgt ervoor dat Spaceship.php maar 1x wordt toegevoegd (voorkomt een include loop).
+// De classes moeten ingeladen zijn VOOR session_start(), anders weet PHP niet hoe hij de opgeslagen
+// objecten uit de sessie weer moet terugbouwen.
 include_once 'Spaceship.php';
+include_once 'Game.php';
+
+session_start();
+
+// Een webpagina "vergeet" alles na elke klik. Daarom bewaren we het Game-object in de sessie.
+// Bestaat er nog geen spel? Dan maken we een nieuwe instantie aan.
+if (!isset($_SESSION['game']) || !($_SESSION['game'] instanceof Game)) {
+    $_SESSION['game'] = new Game();
+}
+$game = $_SESSION['game'];
+
+// Is er op een knop gedrukt? Dan roepen we de juiste method van het Game-object aan.
+if ($_SERVER['REQUEST_METHOD'] === 'POST') {
+    $action = $_POST['action'] ?? '';
+    $shipId = $_POST['ship'] ?? '';
+
+    switch ($action) {
+        case 'shoot':
+            $game->shoot($shipId);
+            break;
+        case 'move':
+            $game->move($shipId);
+            break;
+        case 'reset':
+            $_SESSION['game'] = new Game();
+            break;
+    }
+
+    // Post/Redirect/Get: na de actie laden we de pagina opnieuw, zodat F5 de actie niet herhaalt.
+    header('Location: index.php');
+    exit;
+}
 
 // Hulpfunctie: zet een waarde om naar een percentage (max 100) voor de statusbalken.
 function percentage(int $value, int $max = 100): int
 {
     return max(0, min(100, (int) round($value / $max * 100)));
+}
+
+// Weergave-instellingen per schip (alleen uiterlijk, de echte data zit in de objecten).
+$shipStyles = [
+    'ship1' => ['name' => 'Ship 1', 'img' => 'img/ship1.svg', 'mod' => 'blue'],
+    'ship2' => ['name' => 'Ship 2', 'img' => 'img/ship2.svg', 'mod' => 'red'],
+];
+
+// Is het gevecht voorbij? Dan mag niemand meer schieten.
+$gameOver = false;
+foreach ($game->getShips() as $ship) {
+    if (!$ship->isAlive) {
+        $gameOver = true;
+    }
 }
 ?>
 
@@ -33,88 +80,67 @@ function percentage(int $value, int $max = 100): int
 
     <main class="dashboard">
 
-        <!-- Logboek: hier staat alle uitvoer van de code, in volgorde -->
-        <section class="panel log">
-            <h2 class="panel__title">Mission log</h2>
-            <div class="log__screen">
-                <?php
-                // Eerst een standaard instantie maken van het object (zonder parameters = standaard waarden).
-                $ship1 = new Spaceship();
-                echo "<p class='log__line'>Ship1 ammo: " . $ship1->ammo . "</p>";
-
-                // Een tweede instantie, nu met eigen waarden.
-                $ship2 = new Spaceship(50, 50, 50);
-                echo "<p class='log__line'>Ship2 ammo: " . $ship2->ammo . "</p>";
-
-                // Data transport: Ship1 schiet, de return-waarde vangen we op in $dmg.
-                $dmg = $ship1->shoot();
-                echo "<p class='log__line log__line--attack'>Ship1 shot and did damage: " . $dmg . "</p>";
-
-                // De schade via de parameter doorgeven aan Ship2.
-                $ship2->hit($dmg);
-
-                // Aantonen dat het is gelukt.
-                echo "<p class='log__line'>Ship1 ammo: " . $ship1->ammo . "</p>";
-                echo "<p class='log__line log__line--hit'>Ship2 HP: " . $ship2->hitPoints . "</p>";
-                if ($ship2->isAlive) {
-                    echo "<p class='log__line log__line--good'>Ship2 is still alive!</p>";
-                } else {
-                    echo "<p class='log__line log__line--bad'>Ship2 is dead!</p>";
-                }
-
-                // Toon de fuel van ship1, laat ship1 1x bewegen en toon de fuel opnieuw.
-                echo "<p class='log__line'>Ship1 fuel: " . $ship1->fuel . "</p>";
-                $ship1->move();
-                echo "<p class='log__line log__line--move'>Ship1 moves once</p>";
-                echo "<p class='log__line'>Ship1 fuel: " . $ship1->fuel . "</p>";
-                if ($ship1->fuel > 0) {
-                    echo "<p class='log__line log__line--good'>Ship1 has fuel!</p>";
-                } else {
-                    echo "<p class='log__line log__line--bad'>Ship1 has no fuel!</p>";
-                }
-
-                echo "<p class='log__line log__line--end'>The end of the code has been reached.</p>";
-                ?>
-                <span class="cursor" aria-hidden="true"></span>
-            </div>
-        </section>
-
-        <!-- Scheepskaarten: de eindstand van beide objecten -->
+        <!-- Scheepskaarten met actieknoppen -->
         <section class="ships">
-            <?php
-            $ships = [
-                ['name' => 'Ship 1', 'object' => $ship1, 'img' => 'img/ship1.svg', 'mod' => 'blue'],
-                ['name' => 'Ship 2', 'object' => $ship2, 'img' => 'img/ship2.svg', 'mod' => 'red'],
-            ];
-
-            foreach ($ships as $ship) {
-                $s = $ship['object'];
+            <?php foreach ($game->getShips() as $shipId => $ship) {
+                $style = $shipStyles[$shipId];
             ?>
-                <article class="panel ship ship--<?= $ship['mod'] ?> <?= $s->isAlive ? '' : 'ship--dead' ?>">
+                <article class="panel ship ship--<?= $style['mod'] ?> <?= $ship->isAlive ? '' : 'ship--dead' ?>">
                     <div class="ship__top">
-                        <img class="ship__img" src="<?= $ship['img'] ?>" alt="<?= $ship['name'] ?>">
+                        <img class="ship__img" src="<?= $style['img'] ?>" alt="<?= $style['name'] ?>">
                         <div>
-                            <h2 class="ship__name"><?= $ship['name'] ?></h2>
-                            <span class="badge <?= $s->isAlive ? 'badge--alive' : 'badge--dead' ?>">
-                                <?= $s->isAlive ? 'Online' : 'Destroyed' ?>
+                            <h2 class="ship__name"><?= $style['name'] ?></h2>
+                            <span class="badge <?= $ship->isAlive ? 'badge--alive' : 'badge--dead' ?>">
+                                <?= $ship->isAlive ? 'Online' : 'Destroyed' ?>
                             </span>
                         </div>
                     </div>
 
                     <div class="stat">
-                        <div class="stat__label"><span>Hitpoints</span><span><?= $s->hitPoints ?></span></div>
-                        <div class="bar"><div class="bar__fill bar__fill--hp" style="width: <?= percentage($s->hitPoints) ?>%"></div></div>
+                        <div class="stat__label"><span>Hitpoints</span><span><?= $ship->hitPoints ?></span></div>
+                        <div class="bar"><div class="bar__fill bar__fill--hp" style="width: <?= percentage($ship->hitPoints) ?>%"></div></div>
                     </div>
                     <div class="stat">
-                        <div class="stat__label"><span>Ammo</span><span><?= $s->ammo ?></span></div>
-                        <div class="bar"><div class="bar__fill bar__fill--ammo" style="width: <?= percentage($s->ammo) ?>%"></div></div>
+                        <div class="stat__label"><span>Ammo</span><span><?= $ship->ammo ?></span></div>
+                        <div class="bar"><div class="bar__fill bar__fill--ammo" style="width: <?= percentage($ship->ammo) ?>%"></div></div>
                     </div>
                     <div class="stat">
-                        <div class="stat__label"><span>Fuel</span><span><?= $s->fuel ?></span></div>
-                        <div class="bar"><div class="bar__fill bar__fill--fuel" style="width: <?= percentage($s->fuel) ?>%"></div></div>
+                        <div class="stat__label"><span>Fuel</span><span><?= $ship->fuel ?></span></div>
+                        <div class="bar"><div class="bar__fill bar__fill--fuel" style="width: <?= percentage($ship->fuel) ?>%"></div></div>
                     </div>
+
+                    <!-- Elke knop stuurt de actie en het schip mee naar de server -->
+                    <form method="post" class="actions">
+                        <input type="hidden" name="ship" value="<?= $shipId ?>">
+                        <button type="submit" name="action" value="shoot" class="btn btn--shoot"
+                            <?= ($gameOver || $ship->ammo === 0) ? 'disabled' : '' ?>>
+                            Schieten
+                        </button>
+                        <button type="submit" name="action" value="move" class="btn btn--move"
+                            <?= (!$ship->isAlive || $ship->fuel === 0) ? 'disabled' : '' ?>>
+                            Bewegen
+                        </button>
+                    </form>
                 </article>
             <?php } ?>
+        </section>
+
+        <!-- Logboek: wat er tot nu toe is gebeurd (nieuwste bovenaan) -->
+        <section class="panel log">
+            <div class="log__header">
+                <h2 class="panel__title">Mission log</h2>
+                <form method="post">
+                    <button type="submit" name="action" value="reset" class="btn btn--reset">Opnieuw</button>
+                </form>
+            </div>
+            <div class="log__screen">
+                <span class="cursor" aria-hidden="true"></span>
+                <?php foreach ($game->getLog() as $entry) { ?>
+                    <p class="log__line <?= $entry['type'] ? 'log__line--' . $entry['type'] : '' ?>">
+                        <?= htmlspecialchars($entry['message']) ?>
+                    </p>
+                <?php } ?>
+            </div>
         </section>
 
     </main>
