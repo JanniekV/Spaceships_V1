@@ -1,0 +1,27 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100">
+  <defs>
+    <linearGradient id="body2" x1="0" x2="1">
+      <stop offset="0" stop-color="#4a2030"/>
+      <stop offset="0.5" stop-color="#8c3a50"/>
+      <stop offset="1" stop-color="#3a1828"/>
+    </linearGradient>
+    <linearGradient id="flame2" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#fff3c4"/>
+      <stop offset="0.4" stop-color="#ff4d6d"/>
+      <stop offset="1" stop-color="#ff4d6d" stop-opacity="0"/>
+    </linearGradient>
+  </defs>
+  <!-- vlammen -->
+  <path d="M30 70 Q34 92 38 70 Z" fill="url(#flame2)"/>
+  <path d="M62 70 Q66 92 70 70 Z" fill="url(#flame2)"/>
+  <!-- vleugels -->
+  <path d="M50 30 L8 62 L14 70 L50 56 Z" fill="#ff4d6d"/>
+  <path d="M50 30 L92 62 L86 70 L50 56 Z" fill="#ff4d6d"/>
+  <!-- motoren -->
+  <rect x="28" y="52" width="12" height="20" rx="3" fill="#2a1420" stroke="#ff4d6d" stroke-width="1.5"/>
+  <rect x="60" y="52" width="12" height="20" rx="3" fill="#2a1420" stroke="#ff4d6d" stroke-width="1.5"/>
+  <!-- romp -->
+  <path d="M50 10 L62 34 L58 70 L42 70 L38 34 Z" fill="url(#body2)" stroke="#ff4d6d" stroke-width="1.5"/>
+  <!-- cockpit -->
+  <path d="M50 22 L55 36 L50 42 L45 36 Z" fill="#ffd23f" opacity="0.9"/>
+</svg>

@@ -1,71 +1,123 @@
 <?php
-// Om te zorgen dat de code in dit bestand bij de code in de class kan voegen we onderstaande code toe. Gelieve hier
-// de include_once te gebruiken. Dit zorgt voor een extra stukje bescherming tegen fouten, namelijk dat het bestand
-// maar 1x wordt toegevoegd. Dus als de code al een keer is toegevoegd, dan wordt dat niet nog een keer gedaan. Een
-// zogenaamde include loop wordt hiermee voorkomen.
+// include_once zorgt ervoor dat Spaceship.php maar 1x wordt toegevoegd (voorkomt een include loop).
 include_once 'Spaceship.php';
+
+// Hulpfunctie: zet een waarde om naar een percentage (max 100) voor de statusbalken.
+function percentage(int $value, int $max = 100): int
+{
+    return max(0, min(100, (int) round($value / $max * 100)));
+}
 ?>
 
 <!doctype html>
-<html lang="en">
+<html lang="nl">
 
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, user-scalable=no, initial-scale=1.0, maximum-scale=1.0, minimum-scale=1.0">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <meta http-equiv="X-UA-Compatible" content="ie=edge">
-    <title>Document</title>
+    <title>Spaceship Battle</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@500;800&family=Share+Tech+Mono&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="style.css">
 </head>
 
 <body>
-    <p style="font-family: Cambria; font-size: 40px;">
-        <?php
-        // Eerst een standaard instantie maken van het object
-        // Hoe moet het? Wat gebeurt er? Er kan hier verteld worden dat er een nieuwe kopie wordt gemaakt van de
-        // blauwdruk Spaceship. Door geen parameters (data) mee te geven, wordt er een standaard kopie gemaakt. Een
-        // analogie die gemaakt kan worden is met een printer, je maakt een blauwdruk van een document, dat print je
-        // 10x. Als je op de eerste kopie een kras zet met een pen, verschijnt die kras dan ook op de overige 9 kopieën?
-        $ship1 = new Spaceship(); // spaceship? 
+    <div class="stars" aria-hidden="true"></div>
+    <div class="stars stars--slow" aria-hidden="true"></div>
 
+    <header class="header">
+        <h1 class="title">Spaceship <span>Battle</span></h1>
+        <p class="subtitle">Object Georiënteerd Programmeren in PHP</p>
+    </header>
 
-        // Haal simpel een eigenschap op (public) en toon dit.
-        echo "Ship1 ammo:" . $ship1->ammo . "<br>";   // ammmo
-        // Maak een tweede instantie nu custom.
-        $ship2 = new Spaceship(50, 50, 50);
-        // Laten zien dat er nu ook een andere waarde komt.
-        echo "Ship2 ammo:" . $ship2->ammo . "<br>";
+    <main class="dashboard">
 
-        // Data transport. Ship1 schiet, return moet niet worden vergeten.
-        // Variabele expres dmg genoemd ipv damage om te laten zien dat het om de data gaat, niet om de naam.
-        $dmg = $ship1->shoot();
-        echo "Ship1 shot and did damage: " . $dmg . "<br>";
-        // Hoe krijgen we de data bij Ship2? Daarom de parameter.
-        $ship2->hit($dmg);
+        <!-- Logboek: hier staat alle uitvoer van de code, in volgorde -->
+        <section class="panel log">
+            <h2 class="panel__title">Mission log</h2>
+            <div class="log__screen">
+                <?php
+                // Eerst een standaard instantie maken van het object (zonder parameters = standaard waarden).
+                $ship1 = new Spaceship();
+                echo "<p class='log__line'>Ship1 ammo: " . $ship1->ammo . "</p>";
 
-        // Aantonen dat het is gelukt.
-        echo "Ship1 ammo: " . $ship1->ammo . "<br>";
-        echo "Ship2 HP: " . $ship2->hitPoints . "<br>";
-        if ($hitPoints = $ship2->hitPoints) {
-            echo "Ship2 is still alive!<br>";
-        } else {
-            echo "Ship2 is dead!<br>";
-        }
+                // Een tweede instantie, nu met eigen waarden.
+                $ship2 = new Spaceship(50, 50, 50);
+                echo "<p class='log__line'>Ship2 ammo: " . $ship2->ammo . "</p>";
 
-        //toon de fuel van ship1
-        echo "Ship1 fuel: " . $ship1->fuel . "<br>";
-        //laat ship1 1x bewegen en toon de fuel van ship1
-        $ship1->move();
-        echo "ship1 moves once" . "<br>";
-        echo "Ship1 fuel: " . $ship1->fuel . "<br>";
-        if ($fuel = $ship1->fuel) {
-            echo "Ship1 has fuel!<br>";
-        } else {
-            echo "Ship1 has no fuel!<br>";
-        }
+                // Data transport: Ship1 schiet, de return-waarde vangen we op in $dmg.
+                $dmg = $ship1->shoot();
+                echo "<p class='log__line log__line--attack'>Ship1 shot and did damage: " . $dmg . "</p>";
 
+                // De schade via de parameter doorgeven aan Ship2.
+                $ship2->hit($dmg);
 
-        echo "The end of the code has been reached.<br>";
-        ?>
-    </p>
+                // Aantonen dat het is gelukt.
+                echo "<p class='log__line'>Ship1 ammo: " . $ship1->ammo . "</p>";
+                echo "<p class='log__line log__line--hit'>Ship2 HP: " . $ship2->hitPoints . "</p>";
+                if ($ship2->isAlive) {
+                    echo "<p class='log__line log__line--good'>Ship2 is still alive!</p>";
+                } else {
+                    echo "<p class='log__line log__line--bad'>Ship2 is dead!</p>";
+                }
+
+                // Toon de fuel van ship1, laat ship1 1x bewegen en toon de fuel opnieuw.
+                echo "<p class='log__line'>Ship1 fuel: " . $ship1->fuel . "</p>";
+                $ship1->move();
+                echo "<p class='log__line log__line--move'>Ship1 moves once</p>";
+                echo "<p class='log__line'>Ship1 fuel: " . $ship1->fuel . "</p>";
+                if ($ship1->fuel > 0) {
+                    echo "<p class='log__line log__line--good'>Ship1 has fuel!</p>";
+                } else {
+                    echo "<p class='log__line log__line--bad'>Ship1 has no fuel!</p>";
+                }
+
+                echo "<p class='log__line log__line--end'>The end of the code has been reached.</p>";
+                ?>
+                <span class="cursor" aria-hidden="true"></span>
+            </div>
+        </section>
+
+        <!-- Scheepskaarten: de eindstand van beide objecten -->
+        <section class="ships">
+            <?php
+            $ships = [
+                ['name' => 'Ship 1', 'object' => $ship1, 'img' => 'img/ship1.svg', 'mod' => 'blue'],
+                ['name' => 'Ship 2', 'object' => $ship2, 'img' => 'img/ship2.svg', 'mod' => 'red'],
+            ];
+
+            foreach ($ships as $ship) {
+                $s = $ship['object'];
+            ?>
+                <article class="panel ship ship--<?= $ship['mod'] ?> <?= $s->isAlive ? '' : 'ship--dead' ?>">
+                    <div class="ship__top">
+                        <img class="ship__img" src="<?= $ship['img'] ?>" alt="<?= $ship['name'] ?>">
+                        <div>
+                            <h2 class="ship__name"><?= $ship['name'] ?></h2>
+                            <span class="badge <?= $s->isAlive ? 'badge--alive' : 'badge--dead' ?>">
+                                <?= $s->isAlive ? 'Online' : 'Destroyed' ?>
+                            </span>
+                        </div>
+                    </div>
+
+                    <div class="stat">
+                        <div class="stat__label"><span>Hitpoints</span><span><?= $s->hitPoints ?></span></div>
+                        <div class="bar"><div class="bar__fill bar__fill--hp" style="width: <?= percentage($s->hitPoints) ?>%"></div></div>
+                    </div>
+                    <div class="stat">
+                        <div class="stat__label"><span>Ammo</span><span><?= $s->ammo ?></span></div>
+                        <div class="bar"><div class="bar__fill bar__fill--ammo" style="width: <?= percentage($s->ammo) ?>%"></div></div>
+                    </div>
+                    <div class="stat">
+                        <div class="stat__label"><span>Fuel</span><span><?= $s->fuel ?></span></div>
+                        <div class="bar"><div class="bar__fill bar__fill--fuel" style="width: <?= percentage($s->fuel) ?>%"></div></div>
+                    </div>
+                </article>
+            <?php } ?>
+        </section>
+
+    </main>
 </body>
 
 </html>

@@ -1,0 +1,263 @@
+/* ===== Kleuren & basis ===== */
+:root {
+    --bg: #05060f;
+    --panel: rgba(16, 20, 44, 0.75);
+    --border: rgba(120, 160, 255, 0.25);
+    --text: #dfe6ff;
+    --muted: #8a93b8;
+    --blue: #3ad6ff;
+    --red: #ff4d6d;
+    --green: #4dffa6;
+    --yellow: #ffd23f;
+    --purple: #a66bff;
+}
+
+* {
+    box-sizing: border-box;
+    margin: 0;
+    padding: 0;
+}
+
+body {
+    min-height: 100vh;
+    background: radial-gradient(ellipse at top, #1b1640 0%, var(--bg) 60%);
+    color: var(--text);
+    font-family: "Share Tech Mono", monospace;
+    padding: 2rem 1rem 3rem;
+    overflow-x: hidden;
+}
+
+/* ===== Sterrenhemel (alleen CSS, geen afbeelding nodig) ===== */
+.stars {
+    position: fixed;
+    inset: 0;
+    z-index: -1;
+    background-image:
+        radial-gradient(1px 1px at 20px 30px, #fff, transparent),
+        radial-gradient(1px 1px at 120px 80px, #cfe3ff, transparent),
+        radial-gradient(2px 2px at 200px 160px, #fff, transparent),
+        radial-gradient(1px 1px at 280px 40px, #fff, transparent),
+        radial-gradient(1px 1px at 340px 220px, #ffd6f0, transparent);
+    background-size: 380px 260px;
+    animation: drift 60s linear infinite;
+    opacity: 0.8;
+}
+
+.stars--slow {
+    background-size: 600px 420px;
+    animation-duration: 120s;
+    opacity: 0.5;
+}
+
+@keyframes drift {
+    from { background-position: 0 0; }
+    to   { background-position: 0 1000px; }
+}
+
+/* ===== Header ===== */
+.header {
+    text-align: center;
+    margin-bottom: 2.5rem;
+}
+
+.title {
+    font-family: "Orbitron", sans-serif;
+    font-weight: 800;
+    font-size: clamp(2rem, 6vw, 3.5rem);
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    text-shadow: 0 0 12px rgba(58, 214, 255, 0.6);
+}
+
+.title span {
+    color: var(--red);
+    text-shadow: 0 0 12px rgba(255, 77, 109, 0.7);
+}
+
+.subtitle {
+    color: var(--muted);
+    margin-top: 0.5rem;
+}
+
+/* ===== Layout ===== */
+.dashboard {
+    max-width: 1100px;
+    margin: 0 auto;
+    display: grid;
+    grid-template-columns: 1fr 1.2fr;
+    gap: 1.5rem;
+}
+
+/* De schepen links, het logboek rechts */
+.ships { grid-column: 1; grid-row: 1; display: grid; gap: 1.5rem; }
+.log   { grid-column: 2; grid-row: 1; }
+
+@media (max-width: 800px) {
+    .dashboard { grid-template-columns: 1fr; }
+    .ships, .log { grid-column: 1; grid-row: auto; }
+}
+
+.panel {
+    background: var(--panel);
+    border: 1px solid var(--border);
+    border-radius: 16px;
+    padding: 1.5rem;
+    backdrop-filter: blur(6px);
+    box-shadow: 0 10px 40px rgba(0, 0, 0, 0.5);
+}
+
+.panel__title {
+    font-family: "Orbitron", sans-serif;
+    font-size: 1rem;
+    letter-spacing: 0.15em;
+    text-transform: uppercase;
+    color: var(--muted);
+    margin-bottom: 1rem;
+}
+
+/* ===== Scheepskaarten ===== */
+.ship {
+    transition: transform 0.25s ease, box-shadow 0.25s ease;
+}
+
+.ship:hover {
+    transform: translateY(-4px);
+}
+
+.ship--blue { border-color: rgba(58, 214, 255, 0.5); }
+.ship--blue:hover { box-shadow: 0 0 30px rgba(58, 214, 255, 0.35); }
+.ship--red  { border-color: rgba(255, 77, 109, 0.5); }
+.ship--red:hover  { box-shadow: 0 0 30px rgba(255, 77, 109, 0.35); }
+
+.ship--dead { filter: grayscale(0.9); opacity: 0.6; }
+
+.ship__top {
+    display: flex;
+    align-items: center;
+    gap: 1.25rem;
+    margin-bottom: 1.25rem;
+}
+
+.ship__img {
+    width: 90px;
+    height: 90px;
+    animation: hover 3s ease-in-out infinite;
+}
+
+.ship--red .ship__img { animation-delay: -1.5s; }
+
+@keyframes hover {
+    0%, 100% { transform: translateY(0) rotate(-3deg); }
+    50%      { transform: translateY(-8px) rotate(3deg); }
+}
+
+.ship__name {
+    font-family: "Orbitron", sans-serif;
+    font-size: 1.5rem;
+    margin-bottom: 0.4rem;
+}
+
+.badge {
+    display: inline-block;
+    font-size: 0.75rem;
+    padding: 0.2rem 0.7rem;
+    border-radius: 999px;
+    text-transform: uppercase;
+    letter-spacing: 0.1em;
+}
+
+.badge--alive { background: rgba(77, 255, 166, 0.15); color: var(--green); border: 1px solid var(--green); }
+.badge--dead  { background: rgba(255, 77, 109, 0.15); color: var(--red);   border: 1px solid var(--red); }
+
+/* ===== Statusbalken ===== */
+.stat { margin-bottom: 0.9rem; }
+
+.stat__label {
+    display: flex;
+    justify-content: space-between;
+    font-size: 0.85rem;
+    color: var(--muted);
+    margin-bottom: 0.3rem;
+}
+
+.bar {
+    height: 10px;
+    background: rgba(255, 255, 255, 0.08);
+    border-radius: 999px;
+    overflow: hidden;
+}
+
+.bar__fill {
+    height: 100%;
+    border-radius: 999px;
+    animation: grow 1.2s ease-out;
+}
+
+.bar__fill--hp   { background: linear-gradient(90deg, #1fbf75, var(--green)); box-shadow: 0 0 8px var(--green); }
+.bar__fill--ammo { background: linear-gradient(90deg, #e0a800, var(--yellow)); box-shadow: 0 0 8px var(--yellow); }
+.bar__fill--fuel { background: linear-gradient(90deg, #6b3cff, var(--purple)); box-shadow: 0 0 8px var(--purple); }
+
+@keyframes grow {
+    from { width: 0; }
+}
+
+/* ===== Logboek / terminal ===== */
+.log__screen {
+    background: #02030a;
+    border: 1px solid rgba(77, 255, 166, 0.25);
+    border-radius: 10px;
+    padding: 1.25rem;
+    font-size: 1rem;
+    line-height: 1.8;
+    min-height: 100%;
+}
+
+.log__line {
+    color: var(--green);
+    opacity: 0;
+    animation: typeIn 0.4s ease forwards;
+}
+
+.log__line::before {
+    content: "> ";
+    color: var(--muted);
+}
+
+/* Regels verschijnen één voor één */
+.log__line:nth-child(1)  { animation-delay: 0.2s; }
+.log__line:nth-child(2)  { animation-delay: 0.4s; }
+.log__line:nth-child(3)  { animation-delay: 0.6s; }
+.log__line:nth-child(4)  { animation-delay: 0.8s; }
+.log__line:nth-child(5)  { animation-delay: 1.0s; }
+.log__line:nth-child(6)  { animation-delay: 1.2s; }
+.log__line:nth-child(7)  { animation-delay: 1.4s; }
+.log__line:nth-child(8)  { animation-delay: 1.6s; }
+.log__line:nth-child(9)  { animation-delay: 1.8s; }
+.log__line:nth-child(10) { animation-delay: 2.0s; }
+.log__line:nth-child(11) { animation-delay: 2.2s; }
+.log__line:nth-child(n+12) { animation-delay: 2.4s; }
+
+@keyframes typeIn {
+    from { opacity: 0; transform: translateX(-8px); }
+    to   { opacity: 1; transform: translateX(0); }
+}
+
+.log__line--attack { color: var(--yellow); }
+.log__line--hit    { color: var(--red); }
+.log__line--move   { color: var(--purple); }
+.log__line--good   { color: var(--blue); }
+.log__line--bad    { color: var(--red); font-weight: bold; }
+.log__line--end    { color: var(--muted); margin-top: 0.5rem; }
+
+.cursor {
+    display: inline-block;
+    width: 10px;
+    height: 1.1em;
+    background: var(--green);
+    vertical-align: middle;
+    animation: blink 1s steps(1) infinite;
+}
+
+@keyframes blink {
+    50% { opacity: 0; }
+}
