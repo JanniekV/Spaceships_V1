@@ -47,13 +47,8 @@ $shipStyles = [
     'ship2' => ['name' => 'Ship 2', 'img' => 'img/ship2.svg', 'mod' => 'red'],
 ];
 
-// Is het gevecht voorbij? Dan mag niemand meer schieten.
-$gameOver = false;
-foreach ($game->getShips() as $ship) {
-    if (!$ship->isAlive) {
-        $gameOver = true;
-    }
-}
+// Het Game-object weet zelf of het gevecht voorbij is.
+$gameOver = $game->isGameOver();
 ?>
 
 <!doctype html>
@@ -76,6 +71,17 @@ foreach ($game->getShips() as $ship) {
     <header class="header">
         <h1 class="title">Spaceship <span>Battle</span></h1>
         <p class="subtitle">Object Georiënteerd Programmeren in PHP</p>
+
+        <!-- Beurt-indicator -->
+        <?php if ($gameOver) { ?>
+            <p class="turn turn--over">Gevecht voorbij</p>
+        <?php } else {
+            $turnStyle = $shipStyles[$game->getCurrentTurn()];
+        ?>
+            <p class="turn turn--<?= $turnStyle['mod'] ?>">
+                Ronde <?= $game->getRound() ?> &middot; <strong><?= $turnStyle['name'] ?></strong> is aan de beurt
+            </p>
+        <?php } ?>
     </header>
 
     <main class="dashboard">
@@ -84,8 +90,10 @@ foreach ($game->getShips() as $ship) {
         <section class="ships">
             <?php foreach ($game->getShips() as $shipId => $ship) {
                 $style = $shipStyles[$shipId];
+                // Mag dit schip nu iets doen? Alleen als het zijn beurt is en het gevecht nog bezig is.
+                $myTurn = !$gameOver && $game->isTurnOf($shipId);
             ?>
-                <article class="panel ship ship--<?= $style['mod'] ?> <?= $ship->isAlive ? '' : 'ship--dead' ?>">
+                <article class="panel ship ship--<?= $style['mod'] ?> <?= $ship->isAlive ? '' : 'ship--dead' ?> <?= $myTurn ? 'ship--active' : 'ship--waiting' ?>">
                     <div class="ship__top">
                         <img class="ship__img" src="<?= $style['img'] ?>" alt="<?= $style['name'] ?>">
                         <div>
@@ -113,11 +121,11 @@ foreach ($game->getShips() as $ship) {
                     <form method="post" class="actions">
                         <input type="hidden" name="ship" value="<?= $shipId ?>">
                         <button type="submit" name="action" value="shoot" class="btn btn--shoot"
-                            <?= ($gameOver || $ship->ammo === 0) ? 'disabled' : '' ?>>
+                            <?= (!$myTurn || $ship->ammo === 0) ? 'disabled' : '' ?>>
                             Schieten
                         </button>
                         <button type="submit" name="action" value="move" class="btn btn--move"
-                            <?= (!$ship->isAlive || $ship->fuel === 0) ? 'disabled' : '' ?>>
+                            <?= (!$myTurn || $ship->fuel === 0) ? 'disabled' : '' ?>>
                             Bewegen
                         </button>
                     </form>
