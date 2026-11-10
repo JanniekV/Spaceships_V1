@@ -270,6 +270,26 @@ body {
 .log__line--attack { color: var(--yellow); }
 .log__line--hit    { color: var(--red); }
 .log__line--choose { color: var(--purple); }
+.log__line--repair { color: var(--green); font-weight: bold; }
+
+.actions form { display: flex; }
+.actions .btn { width: 100%; }
+
+.btn__cooldown {
+    padding-top: 0.3rem;
+    border-top: 1px dashed currentColor;
+}
+
+/* Aanval die nog oplaadt: zichtbaar anders dan een gewone uitgeschakelde knop */
+.btn--cooldown:disabled {
+    opacity: 0.6;
+    color: var(--muted);
+    border-color: var(--muted);
+    border-style: dashed;
+}
+
+.btn--repair { border-color: var(--green); color: var(--green); }
+.btn--repair:hover:not(:disabled) { background: rgba(77, 255, 166, 0.15); box-shadow: 0 0 16px rgba(77, 255, 166, 0.4); }
 .log__line--good   { color: var(--blue); }
 .log__line--bad    { color: var(--red); font-weight: bold; }
 .log__line--end    { color: var(--muted); margin-top: 0.5rem; }
@@ -290,7 +310,7 @@ body {
 /* ===== Knoppen ===== */
 .actions {
     display: grid;
-    grid-template-columns: 1fr;
+    grid-template-columns: 1fr 1fr;
     gap: 0.75rem;
     margin-top: 1.25rem;
 }
@@ -445,3 +465,22 @@ body {
 .choice__stats span:nth-child(even) { text-align: right; }
 
 .turn--select { border-color: var(--green); color: var(--green); }
+
+.choice__attacks {
+    display: flex;
+    flex-direction: column;
+    gap: 0.4rem;
+    width: 100%;
+    padding-top: 0.6rem;
+    border-top: 1px solid var(--border);
+    text-align: left;
+    font-size: 0.75rem;
+}
+
+.choice__attack {
+    display: flex;
+    flex-direction: column;
+}
+
+.choice__attack strong { color: var(--yellow); font-weight: normal; }
+.choice__attack span { color: var(--muted); }

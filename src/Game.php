@@ -1,6 +1,7 @@
 <?php
 // De Game class is de "regisseur" van het gevecht. Hij bevat de schepen van beide spelers, een logboek
 // en houdt bij in welke fase het spel is (schepen kiezen of vechten) en wie er aan de beurt is.
+include_once 'Attack.php';
 include_once 'Spaceship.php';
 include_once 'Fighter.php';
 include_once 'Tank.php';
@@ -119,33 +120,42 @@ class Game
 
     // ===== Acties =====
 
-    // Het schip van $attackerId schiet op het schip van de tegenstander.
-    public function shoot(string $attackerId): void
+    // Het schip van $attackerId valt het schip van de tegenstander aan met de gekozen aanval.
+    public function shoot(string $attackerId, string $attackKey): void
     {
         if (!$this->checkTurn($attackerId)) {
             return;
         }
 
         $attacker = $this->getShip($attackerId);
+        $attack = $attacker->getAttack($attackKey);
         $targetId = $this->getOpponentId($attackerId);
         $target = $this->getShip($targetId);
 
         $attackerName = $this->getName($attackerId);
         $targetName = $this->getName($targetId);
 
-        // Data transport: shoot() geeft de schade terug, die geven we als parameter door aan hit().
-        // Het maakt de Game class niet uit of het een Fighter of een Tank is: elk object voert
-        // zijn eigen versie van shoot() en hit() uit (polymorfisme).
-        $damage = $attacker->shoot();
-
-        if ($damage === 0) {
-            // Mislukte actie: de beurt blijft bij dit schip, zodat het iets anders kan proberen.
-            $this->addLog("$attackerName heeft niet genoeg ammo om te schieten!", 'bad');
+        if ($attack === null) {
             return;
         }
 
+        // Mislukte actie: de beurt blijft bij dit schip, zodat het iets anders kan kiezen.
+        if (!$attack->isReady()) {
+            $this->addLog($attack->getName() . " laadt nog {$attack->getRemainingCooldown()} beurt(en) op!", 'bad');
+            return;
+        }
+        if ($attacker->ammo < $attack->getAmmoCost()) {
+            $this->addLog("$attackerName heeft niet genoeg ammo voor " . $attack->getName() . '!', 'bad');
+            return;
+        }
+
+        // Data transport: shoot() geeft de schade terug, die geven we als parameter door aan hit().
+        // Het maakt de Game class niet uit of het een Fighter of een Tank is: elk object voert
+        // zijn eigen versie van shoot() en hit() uit (polymorfisme).
+        $damage = $attacker->shoot($attackKey);
+
         $damageTaken = $target->hit($damage);
-        $this->addLog("$attackerName schiet op $targetName ($damage schade).", 'attack');
+        $this->addLog("$attackerName gebruikt " . $attack->getName() . " op $targetName ($damage schade).", 'attack');
 
         if ($damageTaken < $damage) {
             $blocked = $damage - $damageTaken;
@@ -158,6 +168,32 @@ class Game
             $this->addLog("$targetName is vernietigd! $attackerName wint!", 'bad');
             return; // gevecht voorbij, geen nieuwe beurt meer
         }
+
+        $this->nextTurn();
+    }
+
+    // Het schip van $shipId repareert zichzelf. Dit kost een beurt.
+    public function repair(string $shipId): void
+    {
+        if (!$this->checkTurn($shipId)) {
+            return;
+        }
+
+        $ship = $this->getShip($shipId);
+        $name = $this->getName($shipId);
+
+        // Mislukte actie: de beurt blijft bij dit schip, zodat het iets anders kan doen.
+        if ($ship->repairsLeft === 0) {
+            $this->addLog("$name heeft geen reparaties meer over!", 'bad');
+            return;
+        }
+        if ($ship->hitPoints === $ship->maxHitPoints) {
+            $this->addLog("$name is niet beschadigd en hoeft niet te repareren.", 'bad');
+            return;
+        }
+
+        $repaired = $ship->repair();
+        $this->addLog("$name repareert zichzelf: +$repaired HP (nu {$ship->hitPoints} HP, nog {$ship->repairsLeft} reparaties over).", 'repair');
 
         $this->nextTurn();
     }
@@ -197,7 +233,7 @@ class Game
     {
         $next = $this->getOpponentId($this->currentTurn);
 
-        // Heeft het andere schip geen ammo meer? Dan slaat het zijn beurt over.
+        // Kan het andere schip niet schieten en niet repareren? Dan slaat het zijn beurt over.
         if (!$this->canAct($next)) {
             if ($this->isGameOver()) {
                 $this->addLog('Geen enkel schip kan nog iets doen. Gelijkspel!', 'end');
@@ -216,14 +252,14 @@ class Game
         $this->addLog('Ronde ' . $this->round . ': ' . $this->getName($next) . ' is aan de beurt.', 'good');
     }
 
-    // Kan dit schip nog iets doen? Het moet leven en genoeg ammo hebben voor een schot.
+    // Kan dit schip nog iets doen? Schieten of repareren.
     private function canAct(string $shipId): bool
     {
         $ship = $this->getShip($shipId);
-        if ($ship === null || !$ship->isAlive) {
+        if ($ship === null) {
             return false;
         }
-        return $ship->ammo >= $ship->getShotCost();
+        return $ship->canShoot() || $ship->canRepair();
     }
 
     private function getOpponentId(string $shipId): string

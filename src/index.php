@@ -1,6 +1,7 @@
 <?php
 // De classes moeten ingeladen zijn VOOR session_start(), anders weet PHP niet hoe hij de opgeslagen
 // objecten uit de sessie weer moet terugbouwen.
+include_once 'Attack.php';
 include_once 'Spaceship.php';
 include_once 'Fighter.php';
 include_once 'Tank.php';
@@ -10,16 +11,17 @@ session_start();
 
 // Een webpagina "vergeet" alles na elke klik. Daarom bewaren we het Game-object in de sessie.
 // Bestaat er nog geen spel? Dan maken we een nieuwe instantie aan.
-if (!isset($_SESSION['spaceshipGame']) || !($_SESSION['spaceshipGame'] instanceof Game)) {
-    $_SESSION['spaceshipGame'] = new Game();
+if (!isset($_SESSION['spaceshipBattle']) || !($_SESSION['spaceshipBattle'] instanceof Game)) {
+    $_SESSION['spaceshipBattle'] = new Game();
 }
-$game = $_SESSION['spaceshipGame'];
+$game = $_SESSION['spaceshipBattle'];
 
 // Is er op een knop gedrukt? Dan roepen we de juiste method van het Game-object aan.
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     $action = $_POST['action'] ?? '';
     $shipId = $_POST['ship'] ?? '';
     $type = $_POST['type'] ?? '';
+    $attackKey = $_POST['attack'] ?? '';
 
     switch ($action) {
         case 'choose':
@@ -29,10 +31,13 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             $game->start();
             break;
         case 'shoot':
-            $game->shoot($shipId);
+            $game->shoot($shipId, $attackKey);
+            break;
+        case 'repair':
+            $game->repair($shipId);
             break;
         case 'reset':
-            $_SESSION['spaceshipGame'] = new Game();
+            $_SESSION['spaceshipBattle'] = new Game();
             break;
     }
 
@@ -84,7 +89,6 @@ $gameOver = $game->isGameOver();
 
     <header class="header">
         <h1 class="title">Spaceship <span>Battle</span></h1>
-        <p class="subtitle">Object Georiënteerd Programmeren in PHP</p>
 
         <!-- Status-indicator: kiezen, wie aan de beurt is, of voorbij -->
         <?php if (!$game->isStarted()) { ?>
@@ -130,8 +134,15 @@ $gameOver = $game->isGameOver();
                                         <span class="choice__stats">
                                             <span>HP</span><span><?= $example->maxHitPoints ?></span>
                                             <span>Ammo</span><span><?= $example->maxAmmo ?></span>
-                                            <span>Schade</span><span><?= $example->getShotDamage() ?> per schot</span>
                                             <span>Pantser</span><span><?= $example->getArmor() ?></span>
+                                        </span>
+                                        <span class="choice__attacks">
+                                            <?php foreach ($example->getAttacks() as $attack) { ?>
+                                                <span class="choice__attack">
+                                                    <strong><?= $attack->getName() ?></strong>
+                                                    <span><?= $attack->getDamage() ?> schade &middot; <?= $attack->getAmmoCost() ?> ammo &middot; </span>
+                                                </span>
+                                            <?php } ?>
                                         </span>
                                     </button>
                                 </form>
@@ -179,15 +190,44 @@ $gameOver = $game->isGameOver();
                             <div class="bar"><div class="bar__fill bar__fill--ammo" style="width: <?= percentage($ship->ammo, $ship->maxAmmo) ?>%"></div></div>
                         </div>
 
-                        <!-- De knop stuurt de actie en het schip mee naar de server -->
-                        <form method="post" class="actions">
-                            <input type="hidden" name="ship" value="<?= $shipId ?>">
-                            <button type="submit" name="action" value="shoot" class="btn btn--shoot"
-                                <?= (!$myTurn || $ship->ammo < $ship->getShotCost()) ? 'disabled' : '' ?>>
-                                Schieten
-                                <small><?= $ship->getShotDamage() ?> schade &middot; <?= $ship->getShotCost() ?> ammo</small>
-                            </button>
-                        </form>
+                        <!-- Elke knop is een eigen formulier dat de actie, het schip en de aanval meestuurt -->
+                        <div class="actions">
+                            <?php foreach ($ship->getAttacks() as $attackKey => $attack) {
+                                $onCooldown = !$attack->isReady();
+                            ?>
+                                <form method="post">
+                                    <input type="hidden" name="action" value="shoot">
+                                    <input type="hidden" name="ship" value="<?= $shipId ?>">
+                                    <input type="hidden" name="attack" value="<?= $attackKey ?>">
+                                    <button type="submit" class="btn btn--shoot <?= $onCooldown ? 'btn--cooldown' : '' ?>"
+                                        title="<?= $attack->getDescription() ?>"
+                                        <?= (!$myTurn || !$ship->canUseAttack($attackKey)) ? 'disabled' : '' ?>>
+                                        <?= $attack->getName() ?>
+                                        <small><?= $attack->getDamage() ?> schade &middot; <?= $attack->getAmmoCost() ?> ammo</small>
+                                        <small class="btn__cooldown">
+                                            <?php if ($onCooldown) { ?>
+                                                Laadt op: nog <?= $attack->getRemainingCooldown() ?> beurt(en)
+                                            <?php } elseif ($attack->getCooldown() === 0) { ?>
+                                                Geen cooldown
+                                            <?php } else { ?>
+                                                Klaar &middot; cooldown <?= $attack->getCooldown() ?>
+                                            <?php } ?>
+                                        </small>
+                                    </button>
+                                </form>
+                            <?php } ?>
+
+                            <form method="post">
+                                <input type="hidden" name="action" value="repair">
+                                <input type="hidden" name="ship" value="<?= $shipId ?>">
+                                <button type="submit" class="btn btn--repair"
+                                    <?= (!$myTurn || !$ship->canRepair()) ? 'disabled' : '' ?>>
+                                    Repareren
+                                    <small>+<?= $ship->getRepairAmount() ?> HP</small>
+                                    <small class="btn__cooldown">nog <?= $ship->repairsLeft ?>/<?= $ship->getMaxRepairs() ?> over</small>
+                                </button>
+                            </form>
+                        </div>
                     </article>
                 <?php } ?>
 
