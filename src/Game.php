@@ -1,28 +1,76 @@
 <?php
-// De Game class is de "regisseur" van het gevecht. Hij bevat de twee Spaceship-objecten, een logboek
-// en houdt bij wie er aan de beurt is.
-// De Spaceship class weet hoe één schip schiet, geraakt wordt en beweegt. De Game class weet hoe twee
-// schepen met elkaar samenwerken (wie schiet op wie, wie is aan de beurt). Zo heeft elke class één taak.
+// De Game class is de "regisseur" van het gevecht. Hij bevat de schepen van beide spelers, een logboek
+// en houdt bij in welke fase het spel is (schepen kiezen of vechten) en wie er aan de beurt is.
 include_once 'Spaceship.php';
+include_once 'Fighter.php';
+include_once 'Tank.php';
 
 class Game
 {
-    // Properties
-    // private: alleen de Game class zelf mag hier direct aan komen. Van buitenaf gebruik je de methods.
-    private array $ships = [];
+    // ===== Properties =====
+    // Aan het begin heeft nog geen speler een schip gekozen, daarom staat er null.
+    private array $ships = ['ship1' => null, 'ship2' => null];
     private array $log = [];
-    private string $currentTurn = 'ship1'; // Ship 1 begint
+    private bool $started = false;
+    private string $currentTurn = 'ship1'; // Speler 1 begint
     private int $round = 1;
 
-    // Constructor: maakt een nieuw gevecht met twee schepen (instanties van de blauwdruk Spaceship).
     public function __construct()
     {
-        $this->ships['ship1'] = new Spaceship();            // standaard waarden (100, 100, 100)
-        $this->ships['ship2'] = new Spaceship();  // eigen waarden
-        $this->addLog('Het gevecht begint! Ship 1 is als eerste aan de beurt.', 'end');
+        $this->addLog('Kies allebei een schip om het gevecht te beginnen.', 'end');
+    }
+
+    // ===== Schepen kiezen =====
+
+    // Alle types waaruit gekozen kan worden, met een voorbeeld-object om de eigenschappen te tonen.
+    // static: je roept deze method aan op de class zelf (Game::getShipTypes()), zonder object.
+    public static function getShipTypes(): array
+    {
+        return [
+            'fighter' => new Fighter(),
+            'tank' => new Tank(),
+        ];
+    }
+
+    // Een speler kiest een type schip. Zolang het spel nog niet begonnen is, mag je van keuze wisselen.
+    public function chooseShip(string $playerId, string $type): void
+    {
+        if ($this->started || !array_key_exists($playerId, $this->ships)) {
+            return;
+        }
+
+        $ship = $this->createShip($type);
+        if ($ship === null) {
+            return;
+        }
+
+        $this->ships[$playerId] = $ship;
+        $this->addLog($this->getPlayerName($playerId) . ' kiest de ' . $ship->getType() . '.', 'move');
+    }
+
+    // Het spel kan pas beginnen als beide spelers een schip hebben gekozen.
+    public function canStart(): bool
+    {
+        return !$this->started && !in_array(null, $this->ships, true);
+    }
+
+    public function start(): void
+    {
+        if (!$this->canStart()) {
+            return;
+        }
+
+        $this->started = true;
+        $this->addLog('Het gevecht begint!', 'end');
+        $this->addLog('Ronde 1: ' . $this->getName('ship1') . ' is aan de beurt.', 'good');
     }
 
     // ===== Getters =====
+    public function isStarted(): bool
+    {
+        return $this->started;
+    }
+
     public function getShips(): array
     {
         return $this->ships;
@@ -30,7 +78,7 @@ class Game
 
     public function getShip(string $shipId): ?Spaceship
     {
-        // ?? geeft null terug als het schip niet bestaat (bijv. bij een verkeerde waarde uit het formulier).
+        // ?? geeft null terug als de speler niet bestaat (bijv. bij een verkeerde waarde uit het formulier).
         return $this->ships[$shipId] ?? null;
     }
 
@@ -58,6 +106,9 @@ class Game
     // Het gevecht is voorbij als een schip vernietigd is, of als geen enkel schip nog iets kan doen.
     public function isGameOver(): bool
     {
+        if (!$this->started) {
+            return false;
+        }
         foreach ($this->ships as $ship) {
             if (!$ship->isAlive) {
                 return true;
@@ -68,7 +119,7 @@ class Game
 
     // ===== Acties =====
 
-    // Het schip met $attackerId schiet op het andere schip.
+    // Het schip van $attackerId schiet op het schip van de tegenstander.
     public function shoot(string $attackerId): void
     {
         if (!$this->checkTurn($attackerId)) {
@@ -83,6 +134,8 @@ class Game
         $targetName = $this->getName($targetId);
 
         // Data transport: shoot() geeft de schade terug, die geven we als parameter door aan hit().
+        // Het maakt de Game class niet uit of het een Fighter of een Tank is: elk object voert
+        // zijn eigen versie van shoot() en hit() uit (polymorfisme).
         $damage = $attacker->shoot();
 
         if ($damage === 0) {
@@ -91,8 +144,14 @@ class Game
             return;
         }
 
-        $target->hit($damage);
-        $this->addLog("$attackerName schiet op $targetName en doet $damage schade.", 'attack');
+        $damageTaken = $target->hit($damage);
+        $this->addLog("$attackerName schiet op $targetName ($damage schade).", 'attack');
+
+        if ($damageTaken < $damage) {
+            $blocked = $damage - $damageTaken;
+            $this->addLog("$targetName weert $blocked schade af!", 'good');
+        }
+
         $this->addLog("$targetName heeft nog {$target->hitPoints} HP.", 'hit');
 
         if (!$target->isAlive) {
@@ -103,7 +162,7 @@ class Game
         $this->nextTurn();
     }
 
-    // Het schip met $shipId beweegt één keer.
+    // Het schip van $shipId beweegt één keer.
     public function move(string $shipId): void
     {
         if (!$this->checkTurn($shipId)) {
@@ -121,15 +180,32 @@ class Game
         $ship->move();
         $this->addLog("$name beweegt. Fuel over: {$ship->fuel}.", 'move');
 
+        if ($ship->isEvading()) {
+            $this->addLog("$name is klaar om de volgende aanval te ontwijken.", 'good');
+        }
+
         $this->nextTurn();
     }
 
     // ===== Hulpmethods (alleen voor intern gebruik, daarom private) =====
 
+    // Maakt een nieuw object van het gekozen type.
+    private function createShip(string $type): ?Spaceship
+    {
+        switch ($type) {
+            case 'fighter':
+                return new Fighter();
+            case 'tank':
+                return new Tank();
+            default:
+                return null;
+        }
+    }
+
     // Controleert of dit schip nu een actie mag doen. Zo niet, dan komt er een melding in het logboek.
     private function checkTurn(string $shipId): bool
     {
-        if ($this->getShip($shipId) === null || $this->isGameOver()) {
+        if (!$this->started || $this->getShip($shipId) === null || $this->isGameOver()) {
             return false;
         }
 
@@ -156,7 +232,7 @@ class Game
             $next = $this->currentTurn;
         }
 
-        // Is ship2 net klaar? Dan begint er een nieuwe ronde.
+        // Is speler 2 net klaar? Dan begint er een nieuwe ronde.
         if ($this->currentTurn === 'ship2') {
             $this->round++;
         }
@@ -165,11 +241,14 @@ class Game
         $this->addLog('Ronde ' . $this->round . ': ' . $this->getName($next) . ' is aan de beurt.', 'good');
     }
 
-    // Kan dit schip nog iets doen? Het moet leven en ammo of fuel hebben.
+    // Kan dit schip nog iets doen? Het moet leven en genoeg ammo of fuel hebben.
     private function canAct(string $shipId): bool
     {
         $ship = $this->getShip($shipId);
-        return $ship->isAlive && ($ship->ammo > 0 || $ship->fuel > 0);
+        if ($ship === null || !$ship->isAlive) {
+            return false;
+        }
+        return $ship->ammo >= $ship->getShotCost() || $ship->fuel > 0;
     }
 
     private function getOpponentId(string $shipId): string
@@ -177,10 +256,18 @@ class Game
         return $shipId === 'ship1' ? 'ship2' : 'ship1';
     }
 
+    // 'ship1' wordt 'Speler 1'
+    private function getPlayerName(string $shipId): string
+    {
+        return 'Speler ' . str_replace('ship', '', $shipId);
+    }
+
+    // 'ship1' met een Tank wordt 'Speler 1 (Tank)'
     private function getName(string $shipId): string
     {
-        // 'ship1' wordt 'Ship 1'
-        return ucfirst(str_replace('ship', 'ship ', $shipId));
+        $ship = $this->getShip($shipId);
+        $name = $this->getPlayerName($shipId);
+        return $ship === null ? $name : $name . ' (' . $ship->getType() . ')';
     }
 
     private function addLog(string $message, string $type = ''): void

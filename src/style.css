@@ -325,3 +325,126 @@ body {
     opacity: 0.3;
     cursor: not-allowed;
 }
+
+.btn small {
+    display: block;
+    margin-top: 0.25rem;
+    font-family: "Share Tech Mono", monospace;
+    font-size: 0.7rem;
+    letter-spacing: 0;
+    text-transform: none;
+    opacity: 0.8;
+}
+
+.btn--start {
+    width: 100%;
+    font-size: 1.1rem;
+    padding: 1.1rem;
+    color: var(--green);
+    border-color: var(--green);
+}
+
+.btn--start:hover:not(:disabled) {
+    background: rgba(77, 255, 166, 0.15);
+    box-shadow: 0 0 20px rgba(77, 255, 166, 0.4);
+}
+
+/* ===== Extra info op de scheepskaart ===== */
+.ship__type {
+    color: var(--muted);
+    font-size: 0.85rem;
+    text-transform: uppercase;
+    letter-spacing: 0.15em;
+    margin-bottom: 0.5rem;
+}
+
+.badge--info {
+    background: rgba(166, 107, 255, 0.15);
+    color: var(--purple);
+    border: 1px solid var(--purple);
+    margin-left: 0.3rem;
+}
+
+/* ===== Schip kiezen ===== */
+.select__hint {
+    color: var(--muted);
+    margin: 0.25rem 0 1rem;
+}
+
+.ship--blue .select__hint strong { color: var(--blue); }
+.ship--red  .select__hint strong { color: var(--red); }
+
+.choices {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 1rem;
+}
+
+@media (max-width: 500px) {
+    .choices { grid-template-columns: 1fr; }
+}
+
+.choices form { display: flex; }
+
+.choice {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 0.5rem;
+    width: 100%;
+    padding: 1rem;
+    text-align: center;
+    color: var(--text);
+    font-family: inherit;
+    background: rgba(255, 255, 255, 0.04);
+    border: 2px solid var(--border);
+    border-radius: 12px;
+    cursor: pointer;
+    transition: transform 0.2s ease, border-color 0.2s ease, box-shadow 0.2s ease;
+}
+
+.choice:hover { transform: translateY(-3px); }
+
+.ship--blue .choice:hover,
+.ship--blue .choice--selected { border-color: var(--blue); box-shadow: 0 0 22px rgba(58, 214, 255, 0.35); }
+.ship--red .choice:hover,
+.ship--red .choice--selected  { border-color: var(--red);  box-shadow: 0 0 22px rgba(255, 77, 109, 0.35); }
+
+.ship--blue .choice--selected { background: rgba(58, 214, 255, 0.1); }
+.ship--red  .choice--selected { background: rgba(255, 77, 109, 0.1); }
+
+.choice__img {
+    width: 80px;
+    height: 80px;
+    animation: hover 3s ease-in-out infinite;
+}
+
+.choice__type {
+    font-family: "Orbitron", sans-serif;
+    font-size: 1.1rem;
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+}
+
+.choice__desc {
+    font-size: 0.8rem;
+    color: var(--muted);
+    line-height: 1.4;
+}
+
+.choice__stats {
+    display: grid;
+    grid-template-columns: auto 1fr;
+    gap: 0.15rem 0.75rem;
+    width: 100%;
+    margin-top: 0.25rem;
+    padding-top: 0.6rem;
+    border-top: 1px solid var(--border);
+    font-size: 0.8rem;
+    text-align: left;
+}
+
+.choice__stats span:nth-child(odd) { color: var(--muted); }
+.choice__stats span:nth-child(even) { text-align: right; }
+
+.turn--select { border-color: var(--green); color: var(--green); }

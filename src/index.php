@@ -2,23 +2,32 @@
 // De classes moeten ingeladen zijn VOOR session_start(), anders weet PHP niet hoe hij de opgeslagen
 // objecten uit de sessie weer moet terugbouwen.
 include_once 'Spaceship.php';
+include_once 'Fighter.php';
+include_once 'Tank.php';
 include_once 'Game.php';
 
 session_start();
 
 // Een webpagina "vergeet" alles na elke klik. Daarom bewaren we het Game-object in de sessie.
 // Bestaat er nog geen spel? Dan maken we een nieuwe instantie aan.
-if (!isset($_SESSION['game']) || !($_SESSION['game'] instanceof Game)) {
-    $_SESSION['game'] = new Game();
+if (!isset($_SESSION['spaceshipGame']) || !($_SESSION['spaceshipGame'] instanceof Game)) {
+    $_SESSION['spaceshipGame'] = new Game();
 }
-$game = $_SESSION['game'];
+$game = $_SESSION['spaceshipGame'];
 
 // Is er op een knop gedrukt? Dan roepen we de juiste method van het Game-object aan.
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     $action = $_POST['action'] ?? '';
     $shipId = $_POST['ship'] ?? '';
+    $type = $_POST['type'] ?? '';
 
     switch ($action) {
+        case 'choose':
+            $game->chooseShip($shipId, $type);
+            break;
+        case 'start':
+            $game->start();
+            break;
         case 'shoot':
             $game->shoot($shipId);
             break;
@@ -26,7 +35,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             $game->move($shipId);
             break;
         case 'reset':
-            $_SESSION['game'] = new Game();
+            $_SESSION['spaceshipGame'] = new Game();
             break;
     }
 
@@ -35,19 +44,27 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     exit;
 }
 
-// Hulpfunctie: zet een waarde om naar een percentage (max 100) voor de statusbalken.
-function percentage(int $value, int $max = 100): int
+// Hulpfunctie: zet een waarde om naar een percentage voor de statusbalken.
+function percentage(int $value, int $max): int
 {
+    if ($max <= 0) {
+        return 0;
+    }
     return max(0, min(100, (int) round($value / $max * 100)));
 }
 
-// Weergave-instellingen per schip (alleen uiterlijk, de echte data zit in de objecten).
-$shipStyles = [
-    'ship1' => ['name' => 'Ship 1', 'img' => 'img/ship1.svg', 'mod' => 'blue'],
-    'ship2' => ['name' => 'Ship 2', 'img' => 'img/ship2.svg', 'mod' => 'red'],
+// Hulpfunctie: het pad naar de afbeelding, bijv. img/tank-red.svg
+function shipImage(Spaceship $ship, string $color): string
+{
+    return 'img/' . strtolower($ship->getType()) . '-' . $color . '.svg';
+}
+
+// Weergave-instellingen per speler (alleen uiterlijk, de echte data zit in de objecten).
+$players = [
+    'ship1' => ['name' => 'Speler 1', 'mod' => 'blue'],
+    'ship2' => ['name' => 'Speler 2', 'mod' => 'red'],
 ];
 
-// Het Game-object weet zelf of het gevecht voorbij is.
 $gameOver = $game->isGameOver();
 ?>
 
@@ -72,64 +89,124 @@ $gameOver = $game->isGameOver();
         <h1 class="title">Spaceship <span>Battle</span></h1>
         <p class="subtitle">Object Georiënteerd Programmeren in PHP</p>
 
-        <!-- Beurt-indicator -->
-        <?php if ($gameOver) { ?>
+        <!-- Status-indicator: kiezen, wie aan de beurt is, of voorbij -->
+        <?php if (!$game->isStarted()) { ?>
+            <p class="turn turn--select">Kies allebei een schip</p>
+        <?php } elseif ($gameOver) { ?>
             <p class="turn turn--over">Gevecht voorbij</p>
         <?php } else {
-            $turnStyle = $shipStyles[$game->getCurrentTurn()];
+            $turnPlayer = $players[$game->getCurrentTurn()];
         ?>
-            <p class="turn turn--<?= $turnStyle['mod'] ?>">
-                Ronde <?= $game->getRound() ?> &middot; <strong><?= $turnStyle['name'] ?></strong> is aan de beurt
+            <p class="turn turn--<?= $turnPlayer['mod'] ?>">
+                Ronde <?= $game->getRound() ?> &middot; <strong><?= $turnPlayer['name'] ?></strong> is aan de beurt
             </p>
         <?php } ?>
     </header>
 
     <main class="dashboard">
 
-        <!-- Scheepskaarten met actieknoppen -->
         <section class="ships">
-            <?php foreach ($game->getShips() as $shipId => $ship) {
-                $style = $shipStyles[$shipId];
-                // Mag dit schip nu iets doen? Alleen als het zijn beurt is en het gevecht nog bezig is.
-                $myTurn = !$gameOver && $game->isTurnOf($shipId);
-            ?>
-                <article class="panel ship ship--<?= $style['mod'] ?> <?= $ship->isAlive ? '' : 'ship--dead' ?> <?= $myTurn ? 'ship--active' : 'ship--waiting' ?>">
-                    <div class="ship__top">
-                        <img class="ship__img" src="<?= $style['img'] ?>" alt="<?= $style['name'] ?>">
-                        <div>
-                            <h2 class="ship__name"><?= $style['name'] ?></h2>
-                            <span class="badge <?= $ship->isAlive ? 'badge--alive' : 'badge--dead' ?>">
-                                <?= $ship->isAlive ? 'Online' : 'Destroyed' ?>
-                            </span>
+            <?php if (!$game->isStarted()) { ?>
+
+                <!-- ===== Fase 1: schepen kiezen ===== -->
+                <?php foreach ($players as $playerId => $player) {
+                    $chosen = $game->getShip($playerId);
+                ?>
+                    <article class="panel select ship--<?= $player['mod'] ?>">
+                        <h2 class="ship__name"><?= $player['name'] ?></h2>
+                        <p class="select__hint">
+                            <?= $chosen === null ? 'Kies je schip:' : 'Gekozen: <strong>' . $chosen->getType() . '</strong>' ?>
+                        </p>
+
+                        <div class="choices">
+                            <?php foreach (Game::getShipTypes() as $typeKey => $example) {
+                                $isChosen = $chosen !== null && $chosen->getType() === $example->getType();
+                            ?>
+                                <form method="post">
+                                    <input type="hidden" name="action" value="choose">
+                                    <input type="hidden" name="ship" value="<?= $playerId ?>">
+                                    <input type="hidden" name="type" value="<?= $typeKey ?>">
+                                    <button type="submit" class="choice <?= $isChosen ? 'choice--selected' : '' ?>">
+                                        <img class="choice__img" src="<?= shipImage($example, $player['mod']) ?>" alt="<?= $example->getType() ?>">
+                                        <span class="choice__type"><?= $example->getType() ?></span>
+                                        <span class="choice__desc"><?= $example->getDescription() ?></span>
+                                        <span class="choice__stats">
+                                            <span>HP</span><span><?= $example->maxHitPoints ?></span>
+                                            <span>Ammo</span><span><?= $example->maxAmmo ?></span>
+                                            <span>Fuel</span><span><?= $example->maxFuel ?></span>
+                                            <span>Schade</span><span><?= $example->getShotDamage() ?> per schot</span>
+                                            <span>Pantser</span><span><?= $example->getArmor() ?></span>
+                                        </span>
+                                    </button>
+                                </form>
+                            <?php } ?>
                         </div>
-                    </div>
+                    </article>
+                <?php } ?>
 
-                    <div class="stat">
-                        <div class="stat__label"><span>Hitpoints</span><span><?= $ship->hitPoints ?></span></div>
-                        <div class="bar"><div class="bar__fill bar__fill--hp" style="width: <?= percentage($ship->hitPoints) ?>%"></div></div>
-                    </div>
-                    <div class="stat">
-                        <div class="stat__label"><span>Ammo</span><span><?= $ship->ammo ?></span></div>
-                        <div class="bar"><div class="bar__fill bar__fill--ammo" style="width: <?= percentage($ship->ammo) ?>%"></div></div>
-                    </div>
-                    <div class="stat">
-                        <div class="stat__label"><span>Fuel</span><span><?= $ship->fuel ?></span></div>
-                        <div class="bar"><div class="bar__fill bar__fill--fuel" style="width: <?= percentage($ship->fuel) ?>%"></div></div>
-                    </div>
+                <form method="post">
+                    <button type="submit" name="action" value="start" class="btn btn--start"
+                        <?= $game->canStart() ? '' : 'disabled' ?>>
+                        Start gevecht
+                    </button>
+                </form>
 
-                    <!-- Elke knop stuurt de actie en het schip mee naar de server -->
-                    <form method="post" class="actions">
-                        <input type="hidden" name="ship" value="<?= $shipId ?>">
-                        <button type="submit" name="action" value="shoot" class="btn btn--shoot"
-                            <?= (!$myTurn || $ship->ammo === 0) ? 'disabled' : '' ?>>
-                            Schieten
-                        </button>
-                        <button type="submit" name="action" value="move" class="btn btn--move"
-                            <?= (!$myTurn || $ship->fuel === 0) ? 'disabled' : '' ?>>
-                            Bewegen
-                        </button>
-                    </form>
-                </article>
+            <?php } else { ?>
+
+                <!-- ===== Fase 2: het gevecht ===== -->
+                <?php foreach ($game->getShips() as $shipId => $ship) {
+                    $player = $players[$shipId];
+                    // Mag dit schip nu iets doen? Alleen als het zijn beurt is en het gevecht nog bezig is.
+                    $myTurn = !$gameOver && $game->isTurnOf($shipId);
+                ?>
+                    <article class="panel ship ship--<?= $player['mod'] ?> <?= $ship->isAlive ? '' : 'ship--dead' ?> <?= $myTurn ? 'ship--active' : 'ship--waiting' ?>">
+                        <div class="ship__top">
+                            <img class="ship__img" src="<?= shipImage($ship, $player['mod']) ?>" alt="<?= $ship->getType() ?>">
+                            <div>
+                                <h2 class="ship__name"><?= $player['name'] ?></h2>
+                                <p class="ship__type"><?= $ship->getType() ?></p>
+                                <span class="badge <?= $ship->isAlive ? 'badge--alive' : 'badge--dead' ?>">
+                                    <?= $ship->isAlive ? 'Online' : 'Destroyed' ?>
+                                </span>
+                                <?php if ($ship->isEvading()) { ?>
+                                    <span class="badge badge--info">Ontwijkt</span>
+                                <?php } ?>
+                                <?php if ($ship->getArmor() > 0) { ?>
+                                    <span class="badge badge--info">Pantser <?= $ship->getArmor() ?></span>
+                                <?php } ?>
+                            </div>
+                        </div>
+
+                        <div class="stat">
+                            <div class="stat__label"><span>Hitpoints</span><span><?= $ship->hitPoints ?> / <?= $ship->maxHitPoints ?></span></div>
+                            <div class="bar"><div class="bar__fill bar__fill--hp" style="width: <?= percentage($ship->hitPoints, $ship->maxHitPoints) ?>%"></div></div>
+                        </div>
+                        <div class="stat">
+                            <div class="stat__label"><span>Ammo</span><span><?= $ship->ammo ?> / <?= $ship->maxAmmo ?></span></div>
+                            <div class="bar"><div class="bar__fill bar__fill--ammo" style="width: <?= percentage($ship->ammo, $ship->maxAmmo) ?>%"></div></div>
+                        </div>
+                        <div class="stat">
+                            <div class="stat__label"><span>Fuel</span><span><?= $ship->fuel ?> / <?= $ship->maxFuel ?></span></div>
+                            <div class="bar"><div class="bar__fill bar__fill--fuel" style="width: <?= percentage($ship->fuel, $ship->maxFuel) ?>%"></div></div>
+                        </div>
+
+                        <!-- Elke knop stuurt de actie en het schip mee naar de server -->
+                        <form method="post" class="actions">
+                            <input type="hidden" name="ship" value="<?= $shipId ?>">
+                            <button type="submit" name="action" value="shoot" class="btn btn--shoot"
+                                <?= (!$myTurn || $ship->ammo < $ship->getShotCost()) ? 'disabled' : '' ?>>
+                                Schieten
+                                <small><?= $ship->getShotDamage() ?> schade &middot; <?= $ship->getShotCost() ?> ammo</small>
+                            </button>
+                            <button type="submit" name="action" value="move" class="btn btn--move"
+                                <?= (!$myTurn || $ship->fuel === 0) ? 'disabled' : '' ?>>
+                                Bewegen
+                                <small><?= $ship->getFuelUsage() ?> fuel</small>
+                            </button>
+                        </form>
+                    </article>
+                <?php } ?>
+
             <?php } ?>
         </section>
 
