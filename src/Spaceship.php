@@ -27,7 +27,6 @@ abstract class Spaceship
 
     // protected: alleen deze class en de child classes mogen hier bij.
     protected string $type = 'Spaceship';
-    protected int $armor = 0;     // schade die het schip per treffer tegenhoudt
     protected array $attacks = []; // de Attack-objecten van dit schip, bijv. ['laser' => Attack]
 
     // ===== Constructor =====
@@ -67,11 +66,6 @@ abstract class Spaceship
     public function getType(): string
     {
         return $this->type;
-    }
-
-    public function getArmor(): int
-    {
-        return $this->armor;
     }
 
     public function getAttacks(): array
@@ -145,10 +139,9 @@ abstract class Spaceship
     }
 
     // Hit
-    // Verwerkt de schade die dit schip oploopt en geeft terug hoeveel schade er echt aankwam.
-    // Child classes kunnen deze method overschrijven (de Tank heeft bijvoorbeeld pantser).
+    // Verwerkt de schade die dit schip oploopt. $damage komt van shoot() van het andere schip.
     // HP kan niet onder 0 komen: bij 0 HP wordt het schip vernietigd (isAlive = false).
-    public function hit(int $damage): int
+    public function hit(int $damage): void
     {
         if ($this->hitPoints - $damage > 0) {
             $this->hitPoints -= $damage;
@@ -156,7 +149,6 @@ abstract class Spaceship
             $this->hitPoints = 0;
             $this->isAlive = false;
         }
-        return $damage;
     }
 
     // Repair

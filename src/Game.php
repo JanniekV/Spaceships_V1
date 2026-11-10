@@ -150,17 +150,12 @@ class Game
         }
 
         // Data transport: shoot() geeft de schade terug, die geven we als parameter door aan hit().
-        // Het maakt de Game class niet uit of het een Fighter of een Tank is: elk object voert
-        // zijn eigen versie van shoot() en hit() uit (polymorfisme).
+        // Het maakt de Game class niet uit of het een Fighter of een Tank is: elk object heeft
+        // zijn eigen aanvallen, maar ze worden op dezelfde manier gebruikt (polymorfisme).
         $damage = $attacker->shoot($attackKey);
 
-        $damageTaken = $target->hit($damage);
+        $target->hit($damage);
         $this->addLog("$attackerName gebruikt " . $attack->getName() . " op $targetName ($damage schade).", 'attack');
-
-        if ($damageTaken < $damage) {
-            $blocked = $damage - $damageTaken;
-            $this->addLog("$targetName weert $blocked schade af!", 'good');
-        }
 
         $this->addLog("$targetName heeft nog {$target->hitPoints} HP.", 'hit');
 

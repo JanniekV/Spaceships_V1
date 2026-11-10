@@ -375,13 +375,6 @@ body {
     margin-bottom: 0.5rem;
 }
 
-.badge--info {
-    background: rgba(166, 107, 255, 0.15);
-    color: var(--purple);
-    border: 1px solid var(--purple);
-    margin-left: 0.3rem;
-}
-
 /* ===== Schip kiezen ===== */
 .select__hint {
     color: var(--muted);

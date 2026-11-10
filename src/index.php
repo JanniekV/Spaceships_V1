@@ -134,13 +134,12 @@ $gameOver = $game->isGameOver();
                                         <span class="choice__stats">
                                             <span>HP</span><span><?= $example->maxHitPoints ?></span>
                                             <span>Ammo</span><span><?= $example->maxAmmo ?></span>
-                                            <span>Pantser</span><span><?= $example->getArmor() ?></span>
                                         </span>
                                         <span class="choice__attacks">
                                             <?php foreach ($example->getAttacks() as $attack) { ?>
                                                 <span class="choice__attack">
                                                     <strong><?= $attack->getName() ?></strong>
-                                                    <span><?= $attack->getDamage() ?> schade &middot; <?= $attack->getAmmoCost() ?> ammo &middot; </span>
+                                                    <span><?= $attack->getDamage() ?> schade &middot; <?= $attack->getAmmoCost() ?> ammo</span>
                                                 </span>
                                             <?php } ?>
                                         </span>
@@ -175,9 +174,6 @@ $gameOver = $game->isGameOver();
                                 <span class="badge <?= $ship->isAlive ? 'badge--alive' : 'badge--dead' ?>">
                                     <?= $ship->isAlive ? 'Online' : 'Destroyed' ?>
                                 </span>
-                                <?php if ($ship->getArmor() > 0) { ?>
-                                    <span class="badge badge--info">Pantser <?= $ship->getArmor() ?></span>
-                                <?php } ?>
                             </div>
                         </div>
 

@@ -3,7 +3,7 @@ include_once 'Spaceship.php';
 
 // Fighter is een child class van Spaceship (extends).
 // Hij erft alles van Spaceship, maar is agressief: sterke aanvallen die snel weer opladen,
-// maar minder HP en geen pantser.
+// maar minder HP.
 class Fighter extends Spaceship
 {
     // Eigen waarden. Die overschrijven de standaardwaarden van de parent class.
@@ -28,8 +28,8 @@ class Fighter extends Spaceship
     {
         return [
             'laser'  => new Attack('Laser', 'Snelle laserstraal', 20, 5, 0),
-            'raket'  => new Attack('Raket', 'Zoekt zijn doel', 35, 10, 2),
-            'salvo'  => new Attack('Salvo', 'Alles tegelijk afvuren', 55, 20, 4),
+            'raket'  => new Attack('Raket', 'Zoekt zijn doel', 35, 25, 2),
+            'salvo'  => new Attack('Salvo', 'Alles tegelijk afvuren', 55, 50, 4),
         ];
     }
 }
