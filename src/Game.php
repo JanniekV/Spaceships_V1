@@ -45,7 +45,7 @@ class Game
         }
 
         $this->ships[$playerId] = $ship;
-        $this->addLog($this->getPlayerName($playerId) . ' kiest de ' . $ship->getType() . '.', 'move');
+        $this->addLog($this->getPlayerName($playerId) . ' kiest de ' . $ship->getType() . '.', 'choose');
     }
 
     // Het spel kan pas beginnen als beide spelers een schip hebben gekozen.
@@ -162,31 +162,6 @@ class Game
         $this->nextTurn();
     }
 
-    // Het schip van $shipId beweegt één keer.
-    public function move(string $shipId): void
-    {
-        if (!$this->checkTurn($shipId)) {
-            return;
-        }
-
-        $ship = $this->getShip($shipId);
-        $name = $this->getName($shipId);
-
-        if ($ship->fuel === 0) {
-            $this->addLog("$name heeft geen fuel meer en kan niet bewegen!", 'bad');
-            return;
-        }
-
-        $ship->move();
-        $this->addLog("$name beweegt. Fuel over: {$ship->fuel}.", 'move');
-
-        if ($ship->isEvading()) {
-            $this->addLog("$name is klaar om de volgende aanval te ontwijken.", 'good');
-        }
-
-        $this->nextTurn();
-    }
-
     // ===== Hulpmethods (alleen voor intern gebruik, daarom private) =====
 
     // Maakt een nieuw object van het gekozen type.
@@ -222,7 +197,7 @@ class Game
     {
         $next = $this->getOpponentId($this->currentTurn);
 
-        // Kan het andere schip niets meer doen (geen ammo én geen fuel)? Dan slaat het zijn beurt over.
+        // Heeft het andere schip geen ammo meer? Dan slaat het zijn beurt over.
         if (!$this->canAct($next)) {
             if ($this->isGameOver()) {
                 $this->addLog('Geen enkel schip kan nog iets doen. Gelijkspel!', 'end');
@@ -241,14 +216,14 @@ class Game
         $this->addLog('Ronde ' . $this->round . ': ' . $this->getName($next) . ' is aan de beurt.', 'good');
     }
 
-    // Kan dit schip nog iets doen? Het moet leven en genoeg ammo of fuel hebben.
+    // Kan dit schip nog iets doen? Het moet leven en genoeg ammo hebben voor een schot.
     private function canAct(string $shipId): bool
     {
         $ship = $this->getShip($shipId);
         if ($ship === null || !$ship->isAlive) {
             return false;
         }
-        return $ship->ammo >= $ship->getShotCost() || $ship->fuel > 0;
+        return $ship->ammo >= $ship->getShotCost();
     }
 
     private function getOpponentId(string $shipId): string

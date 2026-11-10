@@ -2,27 +2,26 @@
 include_once 'Spaceship.php';
 
 // Tank is een child class van Spaceship (extends).
-// Hij is zwaar en traag: veel HP, een groot kanon en pantser, maar weinig munitie en dure bewegingen.
+// Hij is zwaar en taai: veel HP en pantser, maar zijn kanon doet minder schade per schot.
 class Tank extends Spaceship
 {
     // Eigen waarden. Die overschrijven de standaardwaarden van de parent class.
     protected string $type = 'Tank';
-    protected int $shotCost = 10;
-    protected int $damagePerShot = 3;  // 10 * 3 = 30 schade per schot
-    protected int $fuelUsage = 20;
+    protected int $shotCost = 5;
+    protected int $damagePerShot = 3;  // 5 * 3 = 15 schade per schot
     protected int $armor = 5;          // elke treffer doet 5 schade minder
 
     public function __construct()
     {
         // Roep de constructor van de parent aan met de startwaarden van een Tank.
-        // Volgorde: ammo, fuel, hitPoints
-        parent::__construct(80, 60, 160);
+        // Volgorde: ammo, hitPoints
+        parent::__construct(100, 160);
     }
 
     // Verplicht, omdat getDescription() abstract is in Spaceship.
     public function getDescription(): string
     {
-        return 'Zwaar gepantserd met een groot kanon. Het pantser houdt bij elke treffer schade tegen, maar hij heeft weinig munitie.';
+        return 'Zwaar gepantserd met veel HP. Het pantser houdt bij elke treffer schade tegen, maar zijn kanon doet minder schade.';
     }
 
     // Hit overschrijven: eerst het pantser van de schade aftrekken, daarna de normale hit() van de parent.

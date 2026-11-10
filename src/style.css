@@ -219,7 +219,6 @@ body {
 
 .bar__fill--hp   { background: linear-gradient(90deg, #1fbf75, var(--green)); box-shadow: 0 0 8px var(--green); }
 .bar__fill--ammo { background: linear-gradient(90deg, #e0a800, var(--yellow)); box-shadow: 0 0 8px var(--yellow); }
-.bar__fill--fuel { background: linear-gradient(90deg, #6b3cff, var(--purple)); box-shadow: 0 0 8px var(--purple); }
 
 @keyframes grow {
     from { width: 0; }
@@ -270,7 +269,7 @@ body {
 
 .log__line--attack { color: var(--yellow); }
 .log__line--hit    { color: var(--red); }
-.log__line--move   { color: var(--purple); }
+.log__line--choose { color: var(--purple); }
 .log__line--good   { color: var(--blue); }
 .log__line--bad    { color: var(--red); font-weight: bold; }
 .log__line--end    { color: var(--muted); margin-top: 0.5rem; }
@@ -291,7 +290,7 @@ body {
 /* ===== Knoppen ===== */
 .actions {
     display: grid;
-    grid-template-columns: 1fr 1fr;
+    grid-template-columns: 1fr;
     gap: 0.75rem;
     margin-top: 1.25rem;
 }
@@ -315,8 +314,6 @@ body {
 .btn--shoot { border-color: var(--yellow); color: var(--yellow); }
 .btn--shoot:hover:not(:disabled) { background: rgba(255, 210, 63, 0.15); box-shadow: 0 0 16px rgba(255, 210, 63, 0.4); }
 
-.btn--move { border-color: var(--purple); color: var(--purple); }
-.btn--move:hover:not(:disabled) { background: rgba(166, 107, 255, 0.15); box-shadow: 0 0 16px rgba(166, 107, 255, 0.4); }
 
 .btn--reset { font-size: 0.7rem; padding: 0.4rem 0.8rem; color: var(--muted); }
 .btn--reset:hover { color: var(--text); border-color: var(--text); }

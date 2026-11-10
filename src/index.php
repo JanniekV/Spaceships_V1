@@ -31,9 +31,6 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         case 'shoot':
             $game->shoot($shipId);
             break;
-        case 'move':
-            $game->move($shipId);
-            break;
         case 'reset':
             $_SESSION['spaceshipGame'] = new Game();
             break;
@@ -133,7 +130,6 @@ $gameOver = $game->isGameOver();
                                         <span class="choice__stats">
                                             <span>HP</span><span><?= $example->maxHitPoints ?></span>
                                             <span>Ammo</span><span><?= $example->maxAmmo ?></span>
-                                            <span>Fuel</span><span><?= $example->maxFuel ?></span>
                                             <span>Schade</span><span><?= $example->getShotDamage() ?> per schot</span>
                                             <span>Pantser</span><span><?= $example->getArmor() ?></span>
                                         </span>
@@ -168,9 +164,6 @@ $gameOver = $game->isGameOver();
                                 <span class="badge <?= $ship->isAlive ? 'badge--alive' : 'badge--dead' ?>">
                                     <?= $ship->isAlive ? 'Online' : 'Destroyed' ?>
                                 </span>
-                                <?php if ($ship->isEvading()) { ?>
-                                    <span class="badge badge--info">Ontwijkt</span>
-                                <?php } ?>
                                 <?php if ($ship->getArmor() > 0) { ?>
                                     <span class="badge badge--info">Pantser <?= $ship->getArmor() ?></span>
                                 <?php } ?>
@@ -185,23 +178,14 @@ $gameOver = $game->isGameOver();
                             <div class="stat__label"><span>Ammo</span><span><?= $ship->ammo ?> / <?= $ship->maxAmmo ?></span></div>
                             <div class="bar"><div class="bar__fill bar__fill--ammo" style="width: <?= percentage($ship->ammo, $ship->maxAmmo) ?>%"></div></div>
                         </div>
-                        <div class="stat">
-                            <div class="stat__label"><span>Fuel</span><span><?= $ship->fuel ?> / <?= $ship->maxFuel ?></span></div>
-                            <div class="bar"><div class="bar__fill bar__fill--fuel" style="width: <?= percentage($ship->fuel, $ship->maxFuel) ?>%"></div></div>
-                        </div>
 
-                        <!-- Elke knop stuurt de actie en het schip mee naar de server -->
+                        <!-- De knop stuurt de actie en het schip mee naar de server -->
                         <form method="post" class="actions">
                             <input type="hidden" name="ship" value="<?= $shipId ?>">
                             <button type="submit" name="action" value="shoot" class="btn btn--shoot"
                                 <?= (!$myTurn || $ship->ammo < $ship->getShotCost()) ? 'disabled' : '' ?>>
                                 Schieten
                                 <small><?= $ship->getShotDamage() ?> schade &middot; <?= $ship->getShotCost() ?> ammo</small>
-                            </button>
-                            <button type="submit" name="action" value="move" class="btn btn--move"
-                                <?= (!$myTurn || $ship->fuel === 0) ? 'disabled' : '' ?>>
-                                Bewegen
-                                <small><?= $ship->getFuelUsage() ?> fuel</small>
                             </button>
                         </form>
                     </article>
