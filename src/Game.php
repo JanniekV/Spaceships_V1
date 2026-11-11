@@ -193,6 +193,32 @@ class Game
         $this->nextTurn();
     }
 
+    // Het schip van $shipId vult zijn ammo helemaal bij. Dit kost een beurt en kan 1x per match.
+    public function reload(string $shipId): void
+    {
+        if (!$this->checkTurn($shipId)) {
+            return;
+        }
+
+        $ship = $this->getShip($shipId);
+        $name = $this->getName($shipId);
+
+        // Mislukte actie: de beurt blijft bij dit schip, zodat het iets anders kan doen.
+        if ($ship->reloadsLeft === 0) {
+            $this->addLog("$name heeft al herladen deze match!", 'bad');
+            return;
+        }
+        if ($ship->ammo === $ship->maxAmmo) {
+            $this->addLog("$name heeft al volle ammo.", 'bad');
+            return;
+        }
+
+        $added = $ship->reload();
+        $this->addLog("$name herlaadt: +$added ammo (nu {$ship->ammo} ammo).", 'reload');
+
+        $this->nextTurn();
+    }
+
     // ===== Hulpmethods (alleen voor intern gebruik, daarom private) =====
 
     // Maakt een nieuw object van het gekozen type.
@@ -228,7 +254,7 @@ class Game
     {
         $next = $this->getOpponentId($this->currentTurn);
 
-        // Kan het andere schip niet schieten en niet repareren? Dan slaat het zijn beurt over.
+        // Kan het andere schip niet schieten, repareren of herladen? Dan slaat het zijn beurt over.
         if (!$this->canAct($next)) {
             if ($this->isGameOver()) {
                 $this->addLog('Geen enkel schip kan nog iets doen. Gelijkspel!', 'end');
@@ -247,14 +273,14 @@ class Game
         $this->addLog('Ronde ' . $this->round . ': ' . $this->getName($next) . ' is aan de beurt.', 'good');
     }
 
-    // Kan dit schip nog iets doen? Schieten of repareren.
+    // Kan dit schip nog iets doen? Schieten, repareren of herladen.
     private function canAct(string $shipId): bool
     {
         $ship = $this->getShip($shipId);
         if ($ship === null) {
             return false;
         }
-        return $ship->canShoot() || $ship->canRepair();
+        return $ship->canShoot() || $ship->canRepair() || $ship->canReload();
     }
 
     private function getOpponentId(string $shipId): string

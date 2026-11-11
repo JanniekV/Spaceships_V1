@@ -12,6 +12,7 @@ abstract class Spaceship
     // dus een child class (Fighter of Tank) kan de reparatie niet sterker of zwakker maken.
     private const REPAIR_AMOUNT = 20;  // hoeveel HP één reparatie teruggeeft
     private const MAX_REPAIRS = 3;     // hoe vaak een schip mag repareren per gevecht
+    private const MAX_RELOADS = 1;     // hoe vaak een schip mag herladen per gevecht
 
     // ===== Properties =====
     // public: de Game class en index.php mogen deze waarden uitlezen (bijvoorbeeld voor de statusbalken).
@@ -19,6 +20,7 @@ abstract class Spaceship
     public int $hitPoints;   // levenspunten, bij 0 is het schip vernietigd
     public int $ammo;        // munitie, nodig om aan te vallen
     public int $repairsLeft; // hoeveel reparaties er nog over zijn
+    public int $reloadsLeft; // hoe vaak het schip nog mag herladen
 
     // De startwaarden. Die hebben we nodig om de statusbalken als percentage te tonen,
     // want een Tank heeft meer HP dan een Fighter.
@@ -41,6 +43,7 @@ abstract class Spaceship
 
         // self:: gebruik je om een constant van deze class op te halen.
         $this->repairsLeft = self::MAX_REPAIRS;
+        $this->reloadsLeft = self::MAX_RELOADS;
 
         // isAlive is geen parameter: een nieuw schip begint altijd levend.
         $this->isAlive = true;
@@ -88,6 +91,11 @@ abstract class Spaceship
         return self::MAX_REPAIRS;
     }
 
+    public function getMaxReloads(): int
+    {
+        return self::MAX_RELOADS;
+    }
+
     // Kan deze aanval nu gebruikt worden? Hij moet bestaan, opgeladen zijn en er moet genoeg ammo zijn.
     public function canUseAttack(string $attackKey): bool
     {
@@ -114,6 +122,12 @@ abstract class Spaceship
     public function canRepair(): bool
     {
         return $this->isAlive && $this->repairsLeft > 0 && $this->hitPoints < $this->maxHitPoints;
+    }
+
+    // Kan het schip herladen? Het moet leven, nog mogen herladen en niet al volle ammo hebben.
+    public function canReload(): bool
+    {
+        return $this->isAlive && $this->reloadsLeft > 0 && $this->ammo < $this->maxAmmo;
     }
 
     // ===== Methods =====
@@ -170,6 +184,25 @@ abstract class Spaceship
         $this->tickCooldowns();
 
         return $this->hitPoints - $before;
+    }
+
+    // Reload
+    // Vult de ammo helemaal bij tot het maximum van dit schip en geeft terug hoeveel ammo erbij kwam
+    // (0 als herladen niet kan). Ook final: herladen werkt voor elk type schip hetzelfde.
+    final public function reload(): int
+    {
+        if (!$this->canReload()) {
+            return 0;
+        }
+
+        $added = $this->maxAmmo - $this->ammo;
+        $this->ammo = $this->maxAmmo;
+        $this->reloadsLeft--;
+
+        // Herladen kost ook een beurt, dus de aanvallen laden verder op.
+        $this->tickCooldowns();
+
+        return $added;
     }
 
     // ===== Hulpmethods (alleen voor intern gebruik) =====

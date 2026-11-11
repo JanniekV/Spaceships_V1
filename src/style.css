@@ -273,6 +273,15 @@ body {
 .log__line--repair { color: var(--green); font-weight: bold; }
 
 .actions form { display: flex; }
+
+/* 6 kolommen: een aanval is 2 kolommen breed (3 naast elkaar), repareren/herladen 3 breed (2 naast elkaar) */
+.actions__attack  { grid-column: span 2; }
+.actions__support { grid-column: span 3; }
+.actions__attack .btn { padding: 0.75rem 0.4rem; }
+
+.btn--reload { border-color: var(--blue); color: var(--blue); }
+.btn--reload:hover:not(:disabled) { background: rgba(58, 214, 255, 0.15); box-shadow: 0 0 16px rgba(58, 214, 255, 0.4); }
+.log__line--reload { color: var(--blue); font-weight: bold; }
 .actions .btn { width: 100%; }
 
 .btn__cooldown {
@@ -310,7 +319,7 @@ body {
 /* ===== Knoppen ===== */
 .actions {
     display: grid;
-    grid-template-columns: 1fr 1fr;
+    grid-template-columns: repeat(6, 1fr);
     gap: 0.75rem;
     margin-top: 1.25rem;
 }

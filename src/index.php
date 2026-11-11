@@ -36,6 +36,9 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         case 'repair':
             $game->repair($shipId);
             break;
+        case 'reload':
+            $game->reload($shipId);
+            break;
         case 'reset':
             $_SESSION['spaceshipBattle'] = new Game();
             break;
@@ -191,7 +194,7 @@ $gameOver = $game->isGameOver();
                             <?php foreach ($ship->getAttacks() as $attackKey => $attack) {
                                 $onCooldown = !$attack->isReady();
                             ?>
-                                <form method="post">
+                                <form method="post" class="actions__attack">
                                     <input type="hidden" name="action" value="shoot">
                                     <input type="hidden" name="ship" value="<?= $shipId ?>">
                                     <input type="hidden" name="attack" value="<?= $attackKey ?>">
@@ -213,7 +216,7 @@ $gameOver = $game->isGameOver();
                                 </form>
                             <?php } ?>
 
-                            <form method="post">
+                            <form method="post" class="actions__support">
                                 <input type="hidden" name="action" value="repair">
                                 <input type="hidden" name="ship" value="<?= $shipId ?>">
                                 <button type="submit" class="btn btn--repair"
@@ -221,6 +224,17 @@ $gameOver = $game->isGameOver();
                                     Repareren
                                     <small>+<?= $ship->getRepairAmount() ?> HP</small>
                                     <small class="btn__cooldown">nog <?= $ship->repairsLeft ?>/<?= $ship->getMaxRepairs() ?> over</small>
+                                </button>
+                            </form>
+
+                            <form method="post" class="actions__support">
+                                <input type="hidden" name="action" value="reload">
+                                <input type="hidden" name="ship" value="<?= $shipId ?>">
+                                <button type="submit" class="btn btn--reload"
+                                    <?= (!$myTurn || !$ship->canReload()) ? 'disabled' : '' ?>>
+                                    Herladen
+                                    <small>ammo naar <?= $ship->maxAmmo ?></small>
+                                    <small class="btn__cooldown">nog <?= $ship->reloadsLeft ?>/<?= $ship->getMaxReloads() ?> over</small>
                                 </button>
                             </form>
                         </div>
